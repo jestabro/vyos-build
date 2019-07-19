@@ -56,7 +56,7 @@ lb config noauto \
         --firmware-binary false \
         --updates true \
         --security true \
-        --apt-options "--yes -oDebug::Acquire::gpgv=true -oAPT::Hashes::SHA1::Weak=true" \
+        --apt-options "--yes -oDebug::pkgProblemResolver=true -oDebug::Acquire::gpgv=true -oAPT::Hashes::SHA1::Weak=true" \
         --apt-indices false
         "${@}"
 """
