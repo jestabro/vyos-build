@@ -185,6 +185,9 @@ RUN export RTRLIB_VERSION="0.6.3" && \
     cd /tmp/rtrlib-${RTRLIB_VERSION} && dpkg-buildpackage -uc -us -tc -b && \
     dpkg -i ../librtr*_amd64.deb ../librtr*_all.deb
 
+COPY vyos-dev.key /tmp/vyos-dev.key
+RUN apt-key add /tmp/vyos-dev.key
+
 # Packages needed to build frr itself
 # https://github.com/FRRouting/frr/blob/master/doc/developer/building-libyang.rst
 # for more info
