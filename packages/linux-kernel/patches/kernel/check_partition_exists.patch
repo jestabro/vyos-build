@@ -1,0 +1,43 @@
+From 175fcfe510dd211dd80e2d16f7813c8b7023b0e0 Mon Sep 17 00:00:00 2001
+From: John Estabrook <jestabro@vyos.io>
+Date: Sat, 12 Sep 2020 01:30:36 -0500
+Subject: [PATCH] block: fix check on existence of partition
+
+---
+ block/partitions/core.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/block/partitions/core.c b/block/partitions/core.c
+index 534e11285a8d..f75f14302114 100644
+--- a/block/partitions/core.c
++++ b/block/partitions/core.c
+@@ -527,9 +527,16 @@ int bdev_del_partition(struct block_device *bdev, int partno)
+ 	struct hd_struct *part = NULL;
+ 	int ret;
+ 
+-	bdevp = bdget_disk(bdev->bd_disk, partno);
++	part = disk_get_part(bdev->bd_disk, partno);
++	if (!part)
++		return -ENXIO;
++
++	ret = -ENOMEM;
++	bdevp = bdget(part_devt(part));
+ 	if (!bdevp)
+-		return -ENOMEM;
++		goto out_put_part;
++
++	disk_put_part(part);
+ 
+ 	mutex_lock(&bdevp->bd_mutex);
+ 	mutex_lock_nested(&bdev->bd_mutex, 1);
+@@ -552,6 +559,7 @@ int bdev_del_partition(struct block_device *bdev, int partno)
+ 	mutex_unlock(&bdev->bd_mutex);
+ 	mutex_unlock(&bdevp->bd_mutex);
+ 	bdput(bdevp);
++out_put_part:
+ 	if (part)
+ 		disk_put_part(part);
+ 	return ret;
+-- 
+2.26.2
+
