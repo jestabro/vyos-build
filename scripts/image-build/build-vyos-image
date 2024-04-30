@@ -31,6 +31,7 @@ import argparse
 import datetime
 import functools
 import string
+import atexit
 
 # Import third-party modules
 try:
@@ -46,6 +47,7 @@ repo = None
 # Initialize Git object from our repository
 try:
     repo = git.Repo('.', search_parent_directories=True)
+    print(f'JSE git dir is {repo.git_dir}')
 #    repo.git.submodule('update', '--init')
 #    repo.git.submodule('update', '--remote', '--merge')
     repo.create_submodule(name='vyos-1x',
@@ -68,6 +70,17 @@ except Exception as e:
     print(f'W: Could not retrieve information from git: {repr(e)}')
     build_git = ""
     git_branch = ""
+
+@atexit.register
+def cleanup():
+    if repo is None:
+        return
+    for submod in repo.submodules:
+        try:
+            submod.remove()
+        except:
+            pass
+#    os.unlink('.gitmodules')
 
 def cleanup_and_exit(status):
     if repo is None:
@@ -147,7 +160,10 @@ if __name__ == "__main__":
     ## there's no real way around it.
     if os.getuid() != 0:
         print("E: this script requires root privileges")
-        cleanup_and_exit(1)
+        sys.exit(1)
+
+#    print('JSE testing atexit:')
+#    sys.exit(0)
 
     ## Check if there are missing build dependencies
     deps = {
@@ -172,7 +188,7 @@ if __name__ == "__main__":
         checker = utils.check_system_dependencies(deps)
     except OSError as e:
         print(f"E: {e}")
-        cleanup_and_exit(1)
+        sys.exit(1)
 
     ## Load the file with default build configuration options
     try:
@@ -180,7 +196,7 @@ if __name__ == "__main__":
             build_defaults = tomli.load(f)
     except Exception as e:
         print("E: Failed to open the defaults file {0}: {1}".format(defaults.DEFAULTS_FILE, e))
-        cleanup_and_exit(1)
+        sys.exit(1)
 
     ## Get a list of available build flavors
     flavor_dir_env = os.getenv("VYOS_BUILD_FLAVORS_DIR")
@@ -246,14 +262,14 @@ if __name__ == "__main__":
         if func is not None:
             if not func(v):
                 print("E: {v} is not a valid value for --{o} option".format(o=key, v=v))
-                cleanup_and_exit(1)
+                sys.exit(1)
 
     if not args["build_flavor"]:
         print("E: Build flavor is not specified!")
         print("E: For example, to build the generic ISO, run {} iso".format(sys.argv[0]))
         print("Available build flavors:\n")
         print("\n".join(build_flavors))
-        cleanup_and_exit(1)
+        sys.exit(1)
 
     ## Try to get correct architecture and build type from build flavor and CLI arguments
     pre_build_config = merge_dicts({}, build_defaults)
@@ -267,10 +283,10 @@ if __name__ == "__main__":
             pre_build_config = merge_dicts(flavor_config, pre_build_config)
     except FileNotFoundError:
         print(f"E: Flavor '{build_flavor}' does not exist")
-        cleanup_and_exit(1)
+        sys.exit(1)
     except tomli.TOMLDecodeError as e:
         print(f"E: Failed to parse TOML file for flavor '{build_flavor}': {e}")
-        cleanup_and_exit(1)
+        sys.exit(1)
 
     ## Combine configs args > flavor > defaults
     pre_build_config = merge_dicts(args, pre_build_config, skip_none=True)
@@ -280,7 +296,7 @@ if __name__ == "__main__":
     # use the --debian-mirror value for both lb and pbuilder bootstrap
     if pre_build_config['debian_mirror'] is None or pre_build_config['debian_security_mirror'] is None:
         print("E: debian_mirror and debian_security_mirror cannot be empty")
-        cleanup_and_exit(1)
+        sys.exit(1)
 
     if pre_build_config['pbuilder_debian_mirror'] is None:
         args['pbuilder_debian_mirror'] = pre_build_config['pbuilder_debian_mirror'] = pre_build_config['debian_mirror']
@@ -291,14 +307,14 @@ if __name__ == "__main__":
         if args['version'] is not None:
             print("E: Version can only be set for release builds")
             print("Use --build-type=release option if you want to set version number")
-            cleanup_and_exit(1)
+            sys.exit(1)
 
     # Validate characters in version name
     if 'version' in args and args['version'] != None:
         allowed = string.ascii_letters + string.digits + '.' + '-' + '+'
         if not set(args['version']) <= set(allowed):
             print(f'Version contained illegal character(s), allowed: {allowed}')
-            cleanup_and_exit(1)
+            sys.exit(1)
 
     ## Inject some useful hardcoded options
     args['build_dir'] = defaults.BUILD_DIR
@@ -338,7 +354,7 @@ if __name__ == "__main__":
     ## else we have no idea what we are actually supposed to build.
     if not has_nonempty_key(build_config, "image_format"):
         print("E: image format is not specified in the build flavor file")
-        cleanup_and_exit(1)
+        sys.exit(1)
 
     ## Add default boot settings if needed
     if "boot_settings" not in build_config:
@@ -597,7 +613,7 @@ if __name__ == "__main__":
         ## In dry-run mode, exit at this point
         if build_config["dry_run"]:
             print("I: dry-run, not starting image build")
-            cleanup_and_exit(0)
+            sys.exit(0)
 
         ## Add local packages
         local_packages = glob.glob('../packages/*.deb')
@@ -634,4 +650,4 @@ if __name__ == "__main__":
                 print(f"I: Building {f} file {target}")
                 cmd(f"qemu-img convert -f raw -O {f} {raw_image} {target}")
 
-    cleanup_and_exit(0)
+#    sys.exit(0)
