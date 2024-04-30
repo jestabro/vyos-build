@@ -46,6 +46,7 @@ except ModuleNotFoundError as e:
 try:
     repo = git.Repo('.', search_parent_directories=True)
     repo.git.submodule('update', '--init')
+    repo.git.submodule('update', '--remote', '--merge')
 
     # Retrieve the Git commit ID of the repository, 14 charaters will be sufficient
     build_git = repo.head.object.hexsha[:14]
