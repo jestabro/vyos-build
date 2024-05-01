@@ -44,13 +44,9 @@ except ModuleNotFoundError as e:
     print(f"E: Cannot load required library {e}")
     print("E: Please make sure the following Python3 modules are installed: tomli jinja2 git psutil")
 
-repo = None
 # Initialize Git object from our repository
 try:
     repo = git.Repo('.', search_parent_directories=True)
-    print(f'JSE git dir is {repo.git_dir}')
-#    repo.git.submodule('update', '--init')
-#    repo.git.submodule('update', '--remote', '--merge')
     repo.create_submodule(name='vyos-1x',
                           url='https://github.com/vyos/vyos-1x',
                           path='vyos-1x')
@@ -74,25 +70,18 @@ except Exception as e:
 
 @atexit.register
 def cleanup():
-    if repo is None:
-        return
-    for submod in repo.submodules:
-        try:
-            submod.remove()
-        except:
-            pass
-    p = Path(repo.git_dir).parent
-    p.joinpath('.gitmodules').unlink(missing_ok=True)
-
-def cleanup_and_exit(status):
-    if repo is None:
-        sys.exit(status)
-    for submod in repo.submodules:
-        try:
-            submod.remove()
-        except:
-            pass
-    sys.exit(status)
+    try:
+        repo = git.Repo('.', search_parent_directories=True)
+    except:
+        pass
+    else:
+        for submod in repo.submodules:
+            try:
+                submod.remove()
+            except:
+                pass
+        p = Path(repo.git_dir).parent
+        p.joinpath('.gitmodules').unlink(missing_ok=True)
 
 # Add the vyos-1x submodule directory to the Python path
 # so that we can import modules from it.
@@ -163,9 +152,6 @@ if __name__ == "__main__":
     if os.getuid() != 0:
         print("E: this script requires root privileges")
         sys.exit(1)
-
-#    print('JSE testing atexit:')
-#    sys.exit(0)
 
     ## Check if there are missing build dependencies
     deps = {
@@ -651,5 +637,3 @@ if __name__ == "__main__":
                 target = f"{os.path.splitext(raw_image)[0]}.{f}"
                 print(f"I: Building {f} file {target}")
                 cmd(f"qemu-img convert -f raw -O {f} {raw_image} {target}")
-
-#    sys.exit(0)

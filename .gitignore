@@ -8,3 +8,4 @@ packages/*
 testinstall*.img
 *.qcow2
 *.tar
+.gitmodules
