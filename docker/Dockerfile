@@ -243,6 +243,7 @@ RUN pip install --break-system-packages \
       iproute2 \
       libzmq3-dev \
       procps \
+      protobuf-compiler \
       python3 \
       python3-setuptools \
       python3-inotify \
