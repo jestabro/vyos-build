@@ -7,7 +7,6 @@ packages = [
   "vyos-intel-qat",
   "vyos-intel-ixgbe",
   "vyos-intel-ixgbevf",
-  "vyos-ipt-netflow",
 ]
 
 [additional_repositories.salt]
