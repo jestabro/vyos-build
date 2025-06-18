@@ -186,7 +186,7 @@ RUN git clone https://salsa.debian.org/live-team/live-build.git /tmp/live-build 
 RUN wget https://salsa.debian.org/klausenbusk-guest/debootstrap/commit/a9a603b17cadbf52cb98cde0843dc9f23a08b0da.patch \
       -O /tmp/a9a603b17cadbf52cb98cde0843dc9f23a08b0da.patch && \
     git clone https://salsa.debian.org/installer-team/debootstrap /tmp/debootstrap && \
-    cd /tmp/debootstrap && git checkout 1.0.114 && \
+    cd /tmp/debootstrap && git checkout 1.0.141 && \
     patch -p1 < /tmp/a9a603b17cadbf52cb98cde0843dc9f23a08b0da.patch && \
     dch -n "Applying fix for docker image compile" && \
     dpkg-buildpackage -us -uc && \
