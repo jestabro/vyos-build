@@ -644,6 +644,7 @@ DOCUMENTATION_URL="{build_config['documentation_url']}"
                 --mirror-bootstrap "{{debian_mirror}}" \
                 --mirror-chroot "{{debian_mirror}}" \
                 --mirror-chroot-security "{{debian_security_mirror}}" \
+                --proposed-updates true \
                 --security true \
                 --updates true \
                 --utc-time true
