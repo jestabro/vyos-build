@@ -26,6 +26,7 @@ import defaults
 import vyos
 
 from vyos.defaults import directories
+from vyos.defaults import cfg_group
 
 
 def check_build_config():

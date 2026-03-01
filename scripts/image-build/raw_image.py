@@ -32,6 +32,7 @@ VERSION_FILE = 'version.json'
 
 from utils import cmd
 from utils import directories as vyos_dirs
+from utils import cfg_group
 
 def mkdir(path):
     os.makedirs(path, exist_ok=True)
@@ -145,6 +146,7 @@ def mount_image(con):
 
 def install_image(con, version):
     from glob import glob
+    from grp import getgrnam
 
     vyos_dir = os.path.join(con.raw_dir, f'boot/{version}/')
     mkdir(vyos_dir)
@@ -165,6 +167,8 @@ def install_image(con, version):
     # This step is explicitly performed by image_installer.py.
     config_path = Path(vyos_dir).joinpath(f'rw{vyos_dirs["config"]}')
     Path(config_path).mkdir(parents=True, exist_ok=True)
+    os.chown(config_path.as_posix(), -1, getgrnam(cfg_group).gr_gid)
+    os.chmod(config_path.as_posix(), 0o2775)
     Path(config_path).joinpath('.vyatta_config').touch()
 
     with open(f"{con.raw_dir}/persistence.conf", 'w') as f:
